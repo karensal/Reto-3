@@ -1,10 +1,11 @@
 import java.util.Scanner
+import java.security.MessageDigest 
 
 // Clase Usuario 
 data class Usuario(
     var nombre: String,
     var correo: String,
-    var contraseña: String,
+    var contraseñaHash: String,
     var edad: Int,
     var genero: String,
     var masaCorporal: Double,
@@ -22,7 +23,7 @@ data class Usuario(
         print("Nueva contraseña (Deja en blanco para mantener la actual): ")
         val nuevaContraseña = readLine()
         if (nuevaContraseña?.isNotBlank() == true) {
-            contraseña = nuevaContraseña
+            contraseñaHash = nuevaContraseña
         }
 
         print("Nuevo peso (kg): ")
@@ -216,7 +217,7 @@ class Progreso {
     }
 }
 
-//clase tabla Hash
+// Clase HashTabla
 class HashTabla<C : Comparable<C>, V> {
     private val diccionario: HashMap<C, V> = HashMap()
 
@@ -226,12 +227,26 @@ class HashTabla<C : Comparable<C>, V> {
 
     fun buscarUsuario(correo: C, contraseña: C): Usuario? {
         val usuario: Usuario? = diccionario[correo] as? Usuario
-        return if (usuario != null && usuario.contraseña == contraseña) {
+        return if (usuario != null && verificarContraseña(usuario.contraseñaHash, contraseña)) {
             usuario
         } else {
             null
         }
     }
+
+    private fun verificarContraseña(contraseñaHashAlmacenada: String, contraseña: C): Boolean {
+        val md = MessageDigest.getInstance("SHA-256")
+        val hashBytes = md.digest(contraseña.toString().toByteArray())
+        val hashString = hashBytes.joinToString("") { "%02x".format(it) }
+        return hashString == contraseñaHashAlmacenada
+    }
+}
+
+// Función de cifrado hashing para la contraseña
+fun cifrarContraseña(contraseña: String): String {
+    val md = MessageDigest.getInstance("SHA-256")
+    val hashBytes = md.digest(contraseña.toByteArray())
+    return hashBytes.joinToString("") { "%02x".format(it) }
 }
 
 
@@ -362,3 +377,4 @@ fun main() {
         }
     }
 }
+
