@@ -1,11 +1,13 @@
+import java.security.MessageDigest
+
 // Clase para representar un usuario con correo y contraseña
-class Usuario(private val correo: String, private val contraseña: String) {
+class Usuario(private val correo: String, private val contraseñaHash: String) {
     fun getCorreo(): String {
         return correo
     }
 
-    fun getContraseña(): String {
-        return contraseña
+    fun getContraseñaHash(): String {
+        return contraseñaHash
     }
 }
 
@@ -23,12 +25,24 @@ class HashTabla<C : Comparable<C>, V> {
     fun buscarUsuario(correo: C, contraseña: C): Usuario? {
         // Obtener el valor asociado a la clave (correo)
         val contraseñaNodo = diccionario[correo] as? String
-        // Verificar si la contraseña coincide
-        return if (contraseñaNodo != null && contraseñaNodo == contraseña) {
+        // Verificar si la contraseña coincide utilizando el cifrado hashing
+        return if (contraseñaNodo != null && verificarContraseña(contraseñaNodo, contraseña)) {
             Usuario(correo as String, contraseñaNodo)
         } else {
             null
         }
+    }
+
+    // Verificar si la contraseña coincide utilizando el cifrado hashing
+    private fun verificarContraseña(contraseñaHashAlmacenada: String, contraseña: C): Boolean {
+        val md = MessageDigest.getInstance("SHA-256")
+        val hashBytes = md.digest(contraseña.toString().toByteArray())
+
+        // Convertir el hash a una representación hexadecimal
+        val hashString = hashBytes.joinToString("") { "%02x".format(it) }
+
+        // Comparar los hashes
+        return hashString == contraseñaHashAlmacenada
     }
 }
 
@@ -43,11 +57,14 @@ fun main() {
     println("Ingresa tu contraseña:")
     val contraseñaRegistro = readLine() ?: ""
 
-    // Crear un objeto Usuario
-    val nuevoUsuario = Usuario(correoRegistro, contraseñaRegistro)
+    // Crear un objeto Usuario con contraseña cifrada
+    val md = MessageDigest.getInstance("SHA-256")
+    val hashBytes = md.digest(contraseñaRegistro.toByteArray())
+    val contraseñaCifrada = hashBytes.joinToString("") { "%02x".format(it) }
+    val nuevoUsuario = Usuario(correoRegistro, contraseñaCifrada)
 
     // Insertar el nuevo usuario en la tabla hash
-    tablaHash.insertar(nuevoUsuario.getCorreo(), nuevoUsuario.getContraseña())
+    tablaHash.insertar(nuevoUsuario.getCorreo(), nuevoUsuario.getContraseñaHash())
 
     // Ingreso de usuario
     println("Ingreso")
@@ -64,3 +81,4 @@ fun main() {
         println("Usuario no encontrado")
     }
 }
+
